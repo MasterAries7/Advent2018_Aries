@@ -3,14 +3,31 @@
 #include <set>
 #include <string>
 #include <sstream>
-#include <array>
+#include <vector>
 
 using namespace std;
+
+struct ShiftData {
+	int month = -1, day = -1;
+	int time[60] = { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 };
+	int guard = -1;
+};
+
+struct GuardData {
+	int guard = 0;
+	int time_asleep;
+};
 
 bool check2(string x);
 bool check3(string x);
 string findCommon(string x, string y);
 void day3p1disect(string input, int& x_loc, int& y_loc, int& width, int& height);
+void day4p1disect(string input, int& month, int& day, int& hour, int& min, string& event, int& guard);
+int FindGuardAndMin(vector<ShiftData> &vec);
+void FillIn(vector<ShiftData> &vec);
+void addSleepToShift(vector<ShiftData> &vec, int month, int day, int hour, int min, int guard);
+void addGuardToShift(vector<ShiftData> &vec, int month, int day, int hour, int min, int guard);
+void addWakeUpToShift(vector<ShiftData> &vec, int month, int day, int hour, int min, int guard);
 
 void day1pt2() {
 	ifstream input;
@@ -263,9 +280,268 @@ int day3pt2() {
 	return count;
 }
 
+int day4pt1() {
+	ifstream input;
+	input.open("input4-1.txt");
+	ShiftData *gd;
+	vector<ShiftData> vec;
+	while (true) {
+		if (input.eof()) {
+			break;
+		}
+		string in;
+		getline(input, in);
+		int month, day, hour, min, guard;
+		string event;
+		day4p1disect(in, month, day, hour, min, event, guard);
+		if (event == "guard") {
+			addGuardToShift(vec, month, day, hour, min, guard);
+		}
+		if (event == "wakes") {
+			addWakeUpToShift(vec, month, day, hour, min, guard);
+		}
+		if (event == "sleep") {
+			addSleepToShift(vec, month, day, hour, min, guard);
+		}
+	}
+	FillIn(vec);
+	return FindGuardAndMin(vec);
+}
+
+int FindGuardAndMin(vector<ShiftData> &vec) {
+	vector<GuardData> list;
+	for (vector<ShiftData>::iterator it = vec.begin(); it != vec.end(); ++it) {
+		if (it->guard == -1) {
+			return 0;
+		}
+		if (list.empty()) {
+			GuardData gd;
+			gd.guard = it->guard;
+			gd.time_asleep = 0;
+			for (int i = 0; i < 60; i++) {
+				if (it->time[i] == 1) {
+					gd.time_asleep++;
+				}
+			}
+			list.push_back(gd);
+		}
+		else {
+			bool found = false;
+			for (vector<GuardData>::iterator it2 = list.begin(); it2 != list.end(); ++it2) {
+				if (it->guard == it2->guard) {
+					found = true;
+					for (int i = 0; i < 60; i++) {
+						if (it->time[i] == 1) {
+							it2->time_asleep++;
+						}
+					}
+				}
+			}
+			if (!found) {
+				GuardData gd;
+				gd.guard = it->guard;
+				gd.time_asleep = 0;
+				for (int i = 0; i < 60; i++) {
+					if (it->time[i] == 1) {
+						gd.time_asleep++;
+					}
+				}
+				list.push_back(gd);
+			}
+		}
+	}
+	int max_time_asleep = 0;
+	int max_guard;
+	for (vector<GuardData>::iterator it2 = list.begin(); it2 != list.end(); ++it2) {
+		if (it2->time_asleep > max_time_asleep) {
+			max_guard = it2->guard;
+			max_time_asleep = it2->time_asleep;
+		}
+	}
+	ShiftData sd;
+	sd.guard = max_guard;
+	for (vector<ShiftData>::iterator it = vec.begin(); it != vec.end(); ++it) {
+		if (it->guard == sd.guard) {
+			for (int i = 0; i < 60; i++) {
+				if (it->time[i] == 1) {
+					sd.time[i]++;
+				}
+			}
+		}
+	}
+	int max_minute;
+	int max_count = 0;
+	for (int i = 0; i < 60; i++) {
+		if (sd.time[i] > max_count) {
+			max_count = sd.time[i];
+			max_minute = i;
+		}
+	}
+	return max_minute*sd.guard;
+}
+
+void FillIn(vector<ShiftData> &vec) {
+	for (vector<ShiftData>::iterator it = vec.begin(); it != vec.end(); ++it) {
+		int last = 0;
+		for (int i = 0; i < 60; i++) {
+			if ((it->time[i] == 1) && (last == 0)) {
+				last = 1;
+			}
+			else if ((it->time[i] == 0) && (last == 1)) {
+				last = 1;
+				it->time[i] = 1;
+			}
+			else if ((it->time[i] == 2) && (last == 1)) {
+				last = 2;
+			}
+			else if ((it->time[i] == 0) && (last == 2)) {
+				last = 0;
+			}
+		}
+	}
+}
+
+void addSleepToShift(vector<ShiftData> &vec, int month, int day, int hour, int min, int guard) {
+	if (vec.empty()) {
+		ShiftData gd;
+		if (hour == 23) {
+			gd.day = day + 1;
+		}
+		else {
+			gd.day = day;
+			gd.time[min] = 1;
+		}
+		gd.month = month;
+		vec.push_back(gd);
+		return;
+	}
+	for (vector<ShiftData>::iterator it = vec.begin(); it != vec.end(); ++it) {
+		if ((((hour == 23) && (it->day == day + 1)) || (it->day == day)) && (it->month == month)) {
+			it->time[min] = 1;
+			return;
+		}
+	}
+	ShiftData gd;
+	if (hour == 23) {
+		gd.day = day + 1;
+	}
+	else {
+		gd.day = day;
+		gd.time[min] = 1;
+	}
+	gd.month = month;
+	vec.push_back(gd);
+	return;
+}
+
+void addWakeUpToShift(vector<ShiftData> &vec, int month, int day, int hour, int min, int guard) {
+	if (vec.empty()) {
+		ShiftData gd;
+		if (hour == 23) {
+			gd.day = day + 1;
+		}
+		else {
+			gd.day = day;
+			gd.time[min] = 2;
+		}
+		gd.month = month;
+		vec.push_back(gd);
+		return;
+	}
+	for (vector<ShiftData>::iterator it = vec.begin(); it != vec.end(); ++it) {
+		if ((((hour == 23) && (it->day == day + 1)) || (it->day == day))&&(it->month == month)) {
+			it->time[min] = 2;
+			return;
+		}
+	}
+	ShiftData gd;
+	if (hour == 23) {
+		gd.day = day + 1;
+	}
+	else {
+		gd.day = day;
+		gd.time[min] = 2;
+	}
+	gd.month = month;
+	vec.push_back(gd);
+	return;
+}
+
+void addGuardToShift(vector<ShiftData> &vec, int month, int day, int hour, int min, int guard) {
+	if (vec.empty()) {
+		ShiftData gd;
+		if (hour == 23) {
+			gd.day = day + 1;
+		}
+		else {
+			gd.day = day;
+		}
+		gd.month = month;
+		gd.guard = guard;
+		vec.push_back(gd);
+		return;
+	}
+	for (vector<ShiftData>::iterator it = vec.begin(); it != vec.end(); ++it) {
+		if ((((hour == 23) && (it->day == day + 1)) || (it->day == day)) && (it->month == month)) {
+			it->guard = guard;
+			return;
+		} 
+	}
+	ShiftData gd;
+	if (hour == 23) {
+		gd.day = day + 1;
+	}
+	else {
+		gd.day = day;
+	}
+	gd.month = month;
+	gd.guard = guard;
+	vec.push_back(gd);
+	return;
+}
+
+void day4p1disect(string input, int& month, int& day, int& hour, int& min, string& event, int& guard) {
+	string monthraw, dayraw, hourraw, minraw, guardraw, temp;
+	temp = input.substr(input.find('-') + 1);
+	monthraw = temp.substr(0,temp.find('-'));
+	temp = temp.substr(temp.find('-') + 1);
+	dayraw = temp.substr(0, temp.find(' ') );
+	temp = temp.substr(temp.find(' ') + 1);
+	hourraw = temp.substr(0,temp.find(':') );
+	temp = temp.substr(temp.find(':') + 1);
+	minraw = temp.substr(0,temp.find(']') );
+	temp = temp.substr(temp.find(']') + 2);
+
+	if (temp.find("Guard") != string::npos) {
+		event = "guard";
+		temp = temp.substr(temp.find('#') + 1);
+		guardraw = temp.substr(0,temp.find(' '));
+		stringstream Gconv(guardraw);
+		Gconv >> guard;
+	}
+	else if (temp.find("wakes") != string::npos) {
+		event = "wakes";
+	}
+	else if (temp.find("falls") != string::npos) {
+		event = "sleep";
+	}
+	else {
+		event = "Tom fucked up";
+	}
+
+	stringstream conv(monthraw);
+	conv >> month;
+	stringstream conv2(dayraw);
+	conv2 >> day;
+	stringstream conv3(hourraw);
+	conv3 >> hour;
+	stringstream conv4(minraw);
+	conv4 >> min;
+}
+
 int main() {
 	int x;
-	cout << day3pt2();
+	cout << day4pt1();
 	cin >> x;
 	return 0;
 }
