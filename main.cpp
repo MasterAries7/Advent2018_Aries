@@ -684,7 +684,6 @@ int day5pt2() {
 	input.open("input5.txt");
 	string in;
 	getline(input, in);
-	int i = 0;
 	int short_length = -1;
 	string parsekey = "abcdefghijklmnopqrstuvwxyz";
 	for (int j = 0; j < 26; j++) {
@@ -706,6 +705,7 @@ int day5pt2() {
 				break;
 			}
 		}
+		int i = 0;
 		while (i < temp.length() - 1) {
 			char ch = temp.at(i);
 			char ch_low = tolower(ch);
@@ -727,6 +727,7 @@ int day5pt2() {
 		if (short_length > temp.length()) {
 			short_length = temp.length();
 		}
+		cout << "CHAR REMOVED: " << parsekey[j] << " Length of temp: " << temp.length() << " Short_Length: " << short_length << endl;
 	}
 	return short_length;
 }
