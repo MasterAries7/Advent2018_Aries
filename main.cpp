@@ -16,6 +16,7 @@ struct ShiftData {
 struct GuardData {
 	int guard = 0;
 	int time_asleep;
+	int time_sleep[60] = { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 };
 };
 
 bool check2(string x);
@@ -24,6 +25,7 @@ string findCommon(string x, string y);
 void day3p1disect(string input, int& x_loc, int& y_loc, int& width, int& height);
 void day4p1disect(string input, int& month, int& day, int& hour, int& min, string& event, int& guard);
 int FindGuardAndMin(vector<ShiftData> &vec);
+int FindGuardAndMinPt2(vector<ShiftData> &vec);
 void FillIn(vector<ShiftData> &vec);
 void addSleepToShift(vector<ShiftData> &vec, int month, int day, int hour, int min, int guard);
 void addGuardToShift(vector<ShiftData> &vec, int month, int day, int hour, int min, int guard);
@@ -416,7 +418,7 @@ void addSleepToShift(vector<ShiftData> &vec, int month, int day, int hour, int m
 		return;
 	}
 	for (vector<ShiftData>::iterator it = vec.begin(); it != vec.end(); ++it) {
-		if ((((hour == 23) && (it->day == day + 1)) || (it->day == day)) && (it->month == month)) {
+		if ((((hour == 23) && (it->day == day + 1)) || ((it->day == day) && (hour == 0))) && (it->month == month)) {
 			it->time[min] = 1;
 			return;
 		}
@@ -449,7 +451,7 @@ void addWakeUpToShift(vector<ShiftData> &vec, int month, int day, int hour, int 
 		return;
 	}
 	for (vector<ShiftData>::iterator it = vec.begin(); it != vec.end(); ++it) {
-		if ((((hour == 23) && (it->day == day + 1)) || (it->day == day))&&(it->month == month)) {
+		if ((((hour == 23) && (it->day == day + 1)) || ((it->day == day) && (hour == 0))) && (it->month == month)) {
 			it->time[min] = 2;
 			return;
 		}
@@ -468,6 +470,24 @@ void addWakeUpToShift(vector<ShiftData> &vec, int month, int day, int hour, int 
 }
 
 void addGuardToShift(vector<ShiftData> &vec, int month, int day, int hour, int min, int guard) {
+	if (hour == 23) {
+		hour = 0;
+		day++;
+		if (day > 28) {
+			if (day == 29 && month == 2) {
+				month = 3;
+				day = 1;
+			}
+			else if (day == 31 && (month == 4 || month == 6 || month == 9 || month == 11)) {
+				month++;
+				day = 1;
+			}
+			else if (day == 32 && (month == 1 || month == 3 || month == 5 || month == 7 || month == 8 || month == 10 || month == 12)) {
+				month++;
+				day = 1;
+			}
+		}
+	}
 	if (vec.empty()) {
 		ShiftData gd;
 		if (hour == 23) {
@@ -482,7 +502,7 @@ void addGuardToShift(vector<ShiftData> &vec, int month, int day, int hour, int m
 		return;
 	}
 	for (vector<ShiftData>::iterator it = vec.begin(); it != vec.end(); ++it) {
-		if ((((hour == 23) && (it->day == day + 1)) || (it->day == day)) && (it->month == month)) {
+		if ((((hour == 23) && (it->day == day + 1)) || ((it->day == day)&&(hour == 0))) && (it->month == month)) {
 			it->guard = guard;
 			return;
 		} 
@@ -539,9 +559,102 @@ void day4p1disect(string input, int& month, int& day, int& hour, int& min, strin
 	conv4 >> min;
 }
 
+int day4pt2() {
+	ifstream input;
+	input.open("input4-1.txt");
+	ShiftData *gd;
+	vector<ShiftData> vec;
+	while (true) {
+		if (input.eof()) {
+			break;
+		}
+		string in;
+		getline(input, in);
+		int month, day, hour, min, guard;
+		string event;
+		day4p1disect(in, month, day, hour, min, event, guard);
+		if (event == "guard") {
+			addGuardToShift(vec, month, day, hour, min, guard);
+		}
+		if (event == "wakes") {
+			addWakeUpToShift(vec, month, day, hour, min, guard);
+		}
+		if (event == "sleep") {
+			addSleepToShift(vec, month, day, hour, min, guard);
+		}
+	}
+	FillIn(vec);
+	return FindGuardAndMinPt2(vec);
+}
+
+int FindGuardAndMinPt2(vector<ShiftData> &vec) {
+	vector<GuardData> list;
+	for (vector<ShiftData>::iterator it = vec.begin(); it != vec.end(); ++it) {
+		if (it->guard == -1) {
+			return 0;
+		}
+		if (list.empty()) {
+			GuardData gd;
+			gd.guard = it->guard;
+			gd.time_asleep = 0;
+			for (int i = 0; i < 60; i++) {
+				if (it->time[i] == 1) {
+					gd.time_asleep++;
+					gd.time_sleep[i]++;
+				}
+			}
+			list.push_back(gd);
+		}
+		else {
+			bool found = false;
+			for (vector<GuardData>::iterator it2 = list.begin(); it2 != list.end(); ++it2) {
+				if (it->guard == it2->guard) {
+					found = true;
+					for (int i = 0; i < 60; i++) {
+						if (it->time[i] == 1) {
+							it2->time_asleep++;
+							it2->time_sleep[i]++;
+						}
+					}
+				}
+			}
+			if (!found) {
+				GuardData gd;
+				gd.guard = it->guard;
+				gd.time_asleep = 0;
+				for (int i = 0; i < 60; i++) {
+					if (it->time[i] == 1) {
+						gd.time_asleep++;
+						gd.time_sleep[i]++;
+					}
+				}
+				list.push_back(gd);
+			}
+		}
+	}
+	int max_time_sleep = 0;
+	int max_minute = -1;
+	int max_guard;
+	for (vector<GuardData>::iterator it2 = list.begin(); it2 != list.end(); ++it2) {
+		for (int i = 0; i < 60; i++) {
+			if (max_time_sleep == 0) {
+				max_time_sleep = it2->time_sleep[i];
+				max_guard = it2->guard;
+				max_minute = i;
+			}
+			else if (it2->time_sleep[i] > max_time_sleep) {
+				max_time_sleep = it2->time_sleep[i];
+				max_guard = it2->guard;
+				max_minute = i;
+			}
+		}
+	}
+	return max_minute*max_guard;
+}
+
 int main() {
 	int x;
-	cout << day4pt1();
+	cout << day4pt2();
 	cin >> x;
 	return 0;
 }
