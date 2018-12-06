@@ -652,9 +652,39 @@ int FindGuardAndMinPt2(vector<ShiftData> &vec) {
 	return max_minute*max_guard;
 }
 
+string day5pt1() {
+	ifstream input;
+	input.open("input5.txt");
+	string in;
+	getline(input, in);
+	int i = 0;
+	while(i < in.length()-1){
+		char ch = in.at(i);
+		char ch_low = tolower(ch);
+		char ch_upper = toupper(ch);
+		char ch_next = in.at(i+1);
+		if (ch_next != ch) {
+			if ((ch_next == ch_low)||(ch_next == ch_upper)) {
+				in.erase(i,2);
+				i--;
+			}
+			else {
+				i++;
+			}
+		}
+		else {
+			i++;
+		}
+	}
+	if (in.find('\n') != string::npos) {
+		int x = 1;
+	}
+	return in;
+}
+
 int main() {
 	int x;
-	cout << day4pt2();
+	cout << day5pt1();
 	cin >> x;
 	return 0;
 }
