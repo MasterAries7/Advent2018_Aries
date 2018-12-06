@@ -652,7 +652,7 @@ int FindGuardAndMinPt2(vector<ShiftData> &vec) {
 	return max_minute*max_guard;
 }
 
-string day5pt1() {
+int day5pt1() {
 	ifstream input;
 	input.open("input5.txt");
 	string in;
@@ -676,15 +676,64 @@ string day5pt1() {
 			i++;
 		}
 	}
-	if (in.find('\n') != string::npos) {
-		int x = 1;
+	return in.length();
+}
+
+int day5pt2() {
+	ifstream input;
+	input.open("input5.txt");
+	string in;
+	getline(input, in);
+	int i = 0;
+	int short_length = -1;
+	string parsekey = "abcdefghijklmnopqrstuvwxyz";
+	for (int j = 0; j < 26; j++) {
+		string temp = in;
+		if (short_length == -1) {
+			short_length = temp.length();
+		}
+		while (true) {
+			if (temp.find(parsekey[j]) != string::npos) {
+				temp.erase(temp.find(parsekey[j]), 1);
+			}
+			else if (temp.find(toupper(parsekey[j])) != string::npos) {
+				temp.erase(temp.find(toupper(parsekey[j])), 1);
+			}
+			else {
+				if (short_length > temp.length()) {
+					short_length = temp.length();
+				}
+				break;
+			}
+		}
+		while (i < temp.length() - 1) {
+			char ch = temp.at(i);
+			char ch_low = tolower(ch);
+			char ch_upper = toupper(ch);
+			char ch_next = temp.at(i + 1);
+			if (ch_next != ch) {
+				if ((ch_next == ch_low) || (ch_next == ch_upper)) {
+					temp.erase(i, 2);
+					i--;
+				}
+				else {
+					i++;
+				}
+			}
+			else {
+				i++;
+			}
+		}
+		if (short_length > temp.length()) {
+			short_length = temp.length();
+		}
 	}
-	return in;
+	return short_length;
 }
 
 int main() {
 	int x;
-	cout << day5pt1();
+	cout << day5pt2();
 	cin >> x;
 	return 0;
 }
