@@ -19,22 +19,6 @@ struct GuardData {
 	int time_sleep[60] = { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 };
 };
 
-struct Pair {
-	int x = 0;
-	int y = 0;
-	int ID = 0;
-	int closest_ID = -1;
-	int distance;
-	bool infinite = false;
-};
-
-struct Point {
-	int loc_x;
-	int loc_y;
-	int closest_Pair = 0;
-	bool infinite = false;
-};
-
 bool check2(string x);
 bool check3(string x);
 string findCommon(string x, string y);
@@ -749,6 +733,45 @@ int day5pt2() {
 }
 
 int day6pt1() {
+
+	struct Pair {
+		int x;
+		int y;
+		int ID;
+	};
+
+	struct Grid {
+		Pair loc;
+		Pair closest;
+
+	};
+
+	ifstream input;
+	input.open("input6.txt");
+	string in;
+
+
+	/*
+
+	struct Pair {
+	int x = 0;
+	int y = 0;
+	int ID = 0;
+	int closest_ID = -1;
+	int distance;
+	bool infinite = false;
+	};
+
+	struct Point {
+	int loc_x;
+	int loc_y;
+	int closest_Pair = 0;
+	bool infinite = false;
+	};
+
+	DID NOT WORK....decided to stop debugging it and start over
+
+
 	ifstream input;
 	input.open("input6.txt");
 	string in;
@@ -811,6 +834,7 @@ int day6pt1() {
 
 
 	for (vector<Pair>::iterator it = list.begin(); it != list.end(); ++it) {
+
 		bool infinite = true;
 		int x_boundary, y_boundary;
 		if (it->x < high_x - it->x) {
@@ -825,13 +849,19 @@ int day6pt1() {
 		else {
 			y_boundary = high_y - it->y;
 		}
-		for (vector<Pair>::iterator it3 = it + 1; it3 != list.end(); ++it3) {
-			int distance = abs(it3->x - it->x) + abs(it3->y - it->y);
-			if (distance < x_boundary || distance < y_boundary) {
-				infinite = false;
-				if (distance < it->distance && it->distance > 0) {
-					it->distance = distance;
-					it->closest_ID = it3->ID;
+		if (!((x_boundary == 0) || (y_boundary == 0))) {
+			for (vector<Pair>::iterator it3 = it + 1; it3 != list.end(); ++it3) {
+				int distance = abs(it3->x - it->x) + abs(it3->y - it->y);
+				if ((distance < x_boundary || distance < y_boundary) && (distance < x_boundary + y_boundary)) {
+					infinite = false;
+					if (distance < it->distance && it->distance > 0) {
+						it->distance = distance;
+						it->closest_ID = it3->ID;
+					}
+					else if (it->distance < 0) {
+						it->distance = distance;
+						it->closest_ID = it3->ID;
+					}
 				}
 			}
 		}
@@ -840,28 +870,43 @@ int day6pt1() {
 
 	for (vector < Point>::iterator it = point_list.begin(); it != point_list.end(); ++it){
 		for (vector<Pair>::iterator it2 = list.begin(); it2 != list.end(); ++it2) {
-
+			int distance = 0;
+			if (it->closest_Pair == -1) {
+				distance = (abs(it2->x - it->loc_x) + abs(it2->y - it->loc_y));
+				it->closest_Pair = it2->ID;
+			}
+			else {
+				if (distance > (abs(it2->x - it->loc_x) + abs(it2->y - it->loc_y))) {
+					distance = (abs(it2->x - it->loc_x) + abs(it2->y - it->loc_y));
+					it->closest_Pair = it2->ID;
+				}
+				else if (distance == (abs(it2->x - it->loc_x) + abs(it2->y - it->loc_y))) {
+					it->closest_Pair = 0;
+				}
+			}
 		}
 	}
 
-	int max_ID = -1;
+
+
+	int max_ID;
 	int max_count = -1; 
-	for (int i = 0; i < list.size(); i++) {
+
+	for (vector<Pair>::iterator it2 = list.begin(); it2 != list.end(); ++it2) {
 		int count = 0;
-		int name = i + 1;
-		for (int k = 0; k < high_x - low_x; k++) {
-			for (int j = 0; j < high_y - low_y; j++) {
-				if (arr[k-low_x][j-low_y] == name)
+		if (!it2->infinite) {
+			for (vector < Point>::iterator it = point_list.begin(); it != point_list.end(); ++it) {
+				if (it->closest_Pair == it2->ID) {
 					count++;
+				}
 			}
 		}
-		if (count > max_count) {
+		if (count > max_count)
 			max_count = count;
-			max_ID = name;
-		}
 	}
 
 	return max_count;
+	*/
 }
 
 int main() {
