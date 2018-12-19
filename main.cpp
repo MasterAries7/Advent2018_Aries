@@ -738,18 +738,100 @@ int day6pt1() {
 		int x;
 		int y;
 		int ID;
+		bool infinite = false;
 	};
 
 	struct Grid {
 		Pair loc;
-		Pair closest;
-
+		int closest = -1;
+		int distance = -1;
 	};
 
 	ifstream input;
 	input.open("input6.txt");
 	string in;
+	
+	int high_x = -1, high_y = -1, low_x = -1, low_y = -1;
 
+	int ID = 1;
+
+	vector<Pair> points;
+	vector<Grid> grid;
+
+	while (true) {
+		if (input.eof()) {
+			break;
+		}
+		getline(input, in);
+		string raw_x, raw_y;
+		raw_x = in.substr(0, in.find(","));
+		raw_y = in.substr(in.find(",") + 1);
+		stringstream conv(raw_x);
+		stringstream conv2(raw_y);
+		int x, y;
+		conv >> x;
+		conv2 >> y;
+		if (points.empty()) {
+			Pair p;
+			p.x = x;
+			p.y = y;
+			p.ID = ID;
+			low_x = high_x = x;
+			low_y = high_y = y;
+			points.push_back(p);
+		}
+		else {
+			Pair p;
+			p.x = x;
+			p.y = y;
+			p.ID = ID;
+			points.push_back(p);
+			if (x < low_x)
+				low_x = x;
+			if (x > high_x)
+				high_x = x;
+			if (y < low_y)
+				low_y = y;
+			if (y > high_y)
+				high_y = y;
+		}
+		ID++;
+	}
+
+	for (int i = 0; i < high_x - low_x; i++) {
+		for (int j = 0; j < high_y - low_y; j++) {
+			Pair p;
+			p.x = i;
+			p.y = j;
+			p.ID = -1;
+			p.infinite = false;
+			Grid g;
+			g.loc = p;
+			grid.push_back(g);
+		}
+	}
+
+	for (vector<Pair>::iterator it = points.begin(); it != points.end(); ++it) {
+		for (vector<Grid>::iterator it2 = grid.begin(); it2 != grid.end(); ++it2) {
+			if ((it2->loc.x == it->x - low_x) && (it2->loc.y == it->y - low_y)) {
+				it2->loc = *it;
+			}
+		}
+	}
+
+	for (vector<Grid>::iterator it2 = grid.begin(); it2 != grid.end(); ++it2) {
+		for (vector<Pair>::iterator it = points.begin(); it != points.end(); ++it) {
+			if (it2->closest == -1) {
+				it2->closest = it->ID;
+				it2->distance = abs(it2->loc.x - it->x) + abs(it2->loc.y - it->y);
+			}
+			else {
+				if ((it2->distance == abs(it2->loc.x - it->x) + abs(it2->loc.y - it->y))&&(it2->closest != 0)) {
+					it2->closest = 0;
+				}
+			}
+		}
+	}
 
 	/*
 
